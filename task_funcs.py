@@ -1,9 +1,10 @@
+from math import sin, cos
 from javascript import require
 from simple_chalk import chalk
 from time import sleep
 import threading
 pathfinder = require('mineflayer-pathfinder')
-
+Vec3 = require('vec3').Vec3
 def dig_with_wait(bot, block):
     finished = threading.Event()
     def on_dig_complete(err):
@@ -26,8 +27,8 @@ def collect_wood(bot_obj, quantity):
         for block in blockPoints:
             bot.chat(f"Found oak log at {block.position}")
             pos = block.position
-            bot.pathfinder.goto(pathfinder.goals.GoalNear(pos.x, pos.y, pos.z), lambda: dig_with_wait(bot, block))
-            sleep(5)
+            bot.pathfinder.goto(pathfinder.goals.GoalNear(pos.x, pos.y, pos.z), lambda: dig_with_wait(bot, block), timeout=100000)
+            
             
 
     bot_obj.log(chalk.magenta(f"Collecting {quantity} oak wood..."))
@@ -44,30 +45,6 @@ def print_inventory(bot_obj):
         bot.chat(f"Item {i+1}: {inv[i].displayName} x{inv[i].count}")
     bot.chat("]")
     
-def place_crafting_table(bot_obj):
-    bot = bot_obj.bot
-    # Check if the bot has a crafting table in its inventory
-    crafting_table_id = bot.registry.itemsByName["crafting_table"].id
-    crafting_table_count = bot.inventory.count(crafting_table_id)
-    
-    if crafting_table_count > 0:
-        # Get the bot's current position
-        pos = bot.entity.position
-        # Define the position directly below the bot (y - 1)
-        target_pos = {'x': pos.x, 'y': pos.y - 1, 'z': pos.z}
-        
-        # Get the block at the target position
-        target_block = bot.world.getBlock(target_pos)
-        
-        # If the block below is empty (not a solid block), place the crafting table
-        if target_block and target_block.name == 'air':
-            # Place the crafting table at the target position
-            bot.placeBlock(target_pos, bot.registry.itemsByName["crafting_table"], None, lambda err: place_callback(err, bot))
-        else:
-            bot.chat("Cannot place crafting table, position is blocked.")
-    else:
-        bot.chat("No crafting table in inventory to place.")
-
 
 def craft_item(bot_obj, item_name, quantity=1):
     bot = bot_obj.bot
@@ -104,8 +81,6 @@ def craft_item(bot_obj, item_name, quantity=1):
 
     except Exception as e:
         bot.chat(f"Error during crafting: {str(e)}")
-
-    
 
 
 def come(bot_obj, sender):

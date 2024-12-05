@@ -1,7 +1,8 @@
 from javascript import require, On, off, AsyncTask
 from simple_chalk import chalk
 from manager import Task
-from task_funcs import come, collect_wood, print_inventory, craft_item, place_crafting_table
+from task_funcs import come, collect_wood, print_inventory, craft_item
+from time import sleep
 mineflayer = require('mineflayer')
 pathfinder = require('mineflayer-pathfinder').pathfinder
 mineflayerViewer = require('prismarine-viewer').mineflayer
@@ -59,38 +60,48 @@ class MCBot:
         def handle_spawn(this):
             self.log("I spawned 👋")
 
-        @AsyncTask(start=True)
         @On(self.bot, 'time')
         def handle_tick_update(this):
             task = self.manager.get_next_task()
             if task:
-                task.perform_task()
+                task.perform_task(self)
 
         @On(self.bot, 'chat')
         def handle_chat(this, sender, message, *args):
             if not self.is_king:
-                return
+                return # The king is here to read chat, no one else should be doing so
+            
             if sender not in self.manager.bots:
                 self.log(f"chat message: {sender}> {message}")
+
+            if 'how do you feel about finals' in message.lower():
+                sleep(0.75)
+                self.bot.chat("Honestly?")
+                sleep(1.5)
+                self.bot.chat("Stressed. Can I just skip to Christmas instead?")
 
             if sender and (sender != self.bot_name) and (message.startswith(f"~")):
                 args = message.split(' ')
                 if 'come' in message:
-                    self.manager.queue(Task(f"Come to {sender}", come, self, sender))
+                    self.manager.queue(Task(f"Come to {sender}", come, sender))
                 
                 if 'collect-wood' in message:
-                    self.manager.queue(Task(f"Collect {args[1]} wood", collect_wood, self, args[1]))
+                    self.manager.queue(Task(f"Collect {args[1]} wood", collect_wood, args[1]))
                 
                 if 'list-inv' in message:
-                    self.manager.queue(Task(f"Listing inventory", print_inventory, self))
-
-                if 'place-table' in message:
-                    self.manager.queue(Task(f"Placing crafting table", place_crafting_table, self))
+                    self.manager.queue(Task(f"Listing inventory", print_inventory))
 
                 if 'craft' in message:
-                    self.manager.queue(Task(f"Attempting to craft {args[1]}", craft_item, self, args[1]))
+                    self.manager.queue(Task(f"Attempting to craft {args[1]}", craft_item, args[1]))
+
+                if 'wait' in message:
+                    def tmp(bot_obj, sleep_time):
+                        sleep(sleep_time)
+                        bot_obj.bot.chat("Has it been long enough?!")
+                    self.manager.queue(Task(f"Waiting for {args[1]} seconds..", tmp, int(args[1])))
 
                 if 'quit' in message:
+                    self.bot.chat("Goodbye!")
                     self.reconnect = False
                     self.bot.quit()
                 

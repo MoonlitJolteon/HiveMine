@@ -3,11 +3,6 @@ class Manager:
     def __init__(self):
         self.bots = set()
         self.tasks = Queue()
-        # self.tasks.put(Task("Task A", lambda: print("Task A")))
-        # self.tasks.put(Task("Task B", lambda: print("Task B")))
-        # self.tasks.put(Task("Task C", lambda: print("Task C")))
-        # self.tasks.put(Task("Task D", lambda: print("Task D")))
-        # self.tasks.put(Task("Task E", lambda: print("Task E")))
 
     def queue(self, task):
         self.tasks.put(task)
@@ -27,5 +22,9 @@ class Task:
         self.func = func
         self.args = args
 
-    def perform_task(self):
-        self.func(*self.args)
+    def perform_task(self, bot_obj):
+        try:
+            self.func(bot_obj, *self.args)
+        except Exception as e:
+            self.log(e)
+        
